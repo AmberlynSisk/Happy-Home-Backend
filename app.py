@@ -26,7 +26,7 @@ class User(db.Model):
     email = db.Column(db.String, unique=True, nullable=False)
     img = db.Column(db.String, nullable=True)
     members = db.relationship('Member', backref='User', cascade='all, delete, delete-orphan')
-
+    events = db.relationship('Event', backref='User', cascade='all, delete, delete-orphan')
 
     def __init__(self, username, password, email, img):
         self.username = username
@@ -42,7 +42,6 @@ class Member(db.Model):
     is_admin = db.Column(db.Boolean, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     lists = db.relationship('List', backref='Member', cascade='all, delete, delete-orphan')
-
 
     def __init__(self, first_name, last_name, is_admin, user_id):
         self.first_name = first_name
@@ -65,7 +64,33 @@ class List(db.Model):
         self.member_id = member_id
 
 
+class Event(db.Model):
+    event_id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String, nullable=False)
+    start = db.Column(db.String, nullable=False)
+    end = db.Column(db.String, nullable=False)
+    all_day = db.Column(db.Boolean, default=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    def __init__(self, title, start, end, all_day, user_id):
+        self.title = title
+        self.start = start
+        self.end = end
+        self.all_day = all_day
+        self.user_id = user_id
+
+
+
+
 # SCHEMAS
+
+class EventSchema(ma.Schema):
+    class Meta: 
+        fields = ('event_id', 'title', 'start', 'end', 'all_day')
+
+event_schema = EventSchema()
+multiple_event_schema = EventSchema(many=True)
+
 
 class ListSchema(ma.Schema):
     class Meta:
@@ -87,8 +112,9 @@ multiple_member_schema = MemberSchema(many=True)
 
 class UserSchema(ma.Schema):
     class Meta:
-        fields = ('id', 'username', 'password', 'email', 'img', 'members')
+        fields = ('id', 'username', 'password', 'email', 'img', 'members', 'events')
     members = ma.Nested(multiple_member_schema)
+    events = ma.Nested(multiple_event_schema)
 
 user_schema = UserSchema()
 multiple_user_schema = UserSchema(many=True)
@@ -201,7 +227,7 @@ def get_members_by_user_id(user_id):
 
 @app.route('/member/delete/<id>', methods=["DELETE"])
 def delete_member_by_id(id):
-    member = db.session.query(Member).filter(Member.id == id).first()
+    member = db.session.query(Member).filter(Member.member_id == id).first()
     db.session.delete(member)
     db.session.commit()
     
@@ -249,7 +275,13 @@ def add_item():
     db.session.add(new_item)
     db.session.commit()
 
-    return jsonify("Congrats, you've added an item to your list!")
+    return jsonify(list_schema.dump(new_item))
+
+
+@app.route('/item/get/<member_id>', methods=["GET"])
+def get_items_by_member_id(member_id):
+    items = db.session.query(List).filter(List.member_id == member_id)
+    return jsonify(multiple_list_schema.dump(items))
 
 
 @app.route('/item/update/<id>', methods=["PUT", "PATCH"])
@@ -281,12 +313,49 @@ def update_item_by_id(id):
 
 @app.route('/item/delete/<id>', methods=["DELETE"])
 def delete_item_by_id(id):
-    item = db.session.query(List).filter(List.id == id).first()
+    item = db.session.query(List).filter(List.list_id == id).first()
     db.session.delete(item)
     db.session.commit()
     
     return jsonify("The list item has been deleted.")
 
+
+
+# EVENT ROUTES
+
+@app.route('/event/add', methods=['POST'])
+def add_event():
+    if request.content_type != 'application/json':
+        return jsonify('Error: Data must be json')
+
+    post_data = request.get_json()
+    title = post_data.get('title')
+    start = post_data.get('start')
+    end = post_data.get('end')
+    all_day = post_data.get('all_day')
+    user_id = post_data.get('user_id')
+
+    new_event = Event(title, start, end, all_day, user_id)
+
+    db.session.add(new_event)
+    db.session.commit()
+
+    return jsonify(event_schema.dump(new_event))
+
+
+@app.route('/event/get/<user_id>', methods=["GET"])
+def get_events_by_user_id(user_id):
+    events = db.session.query(Event).filter(Event.user_id == user_id)
+    return jsonify(multiple_event_schema.dump(events))
+
+
+@app.route('/event/delete/<id>', methods=["DELETE"])
+def delete_event_by_id(id):
+    event = db.session.query(Event).filter(Event.event_id == id).first()
+    db.session.delete(event)
+    db.session.commit()
+    
+    return jsonify("The event has been deleted.")
 
 
 if __name__ == "__main__":
