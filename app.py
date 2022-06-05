@@ -39,14 +39,12 @@ class Member(db.Model):
     member_id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String, nullable=False)
     last_name = db.Column(db.String, nullable=False)
-    is_admin = db.Column(db.Boolean, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     lists = db.relationship('List', backref='Member', cascade='all, delete, delete-orphan')
 
-    def __init__(self, first_name, last_name, is_admin, user_id):
+    def __init__(self, first_name, last_name, user_id):
         self.first_name = first_name
         self.last_name = last_name
-        self.is_admin = is_admin
         self.user_id = user_id
 
 
@@ -102,7 +100,7 @@ multiple_list_schema = ListSchema(many=True)
 
 class MemberSchema(ma.Schema):
     class Meta:
-        fields = ('member_id', 'first_name', 'last_name', 'is_admin', 'lists')
+        fields = ('member_id', 'first_name', 'last_name', 'lists')
     lists = ma.Nested(multiple_list_schema)
 
 
@@ -203,10 +201,9 @@ def add_member():
     post_data = request.get_json()
     first_name = post_data.get('first_name')
     last_name = post_data.get('last_name')
-    is_admin = post_data.get('is_admin')
     user_id = post_data.get('user_id')
 
-    new_member = Member(first_name, last_name, is_admin, user_id)
+    new_member = Member(first_name, last_name, user_id)
     db.session.add(new_member)
     db.session.commit()
 
@@ -242,17 +239,13 @@ def update_member_by_id(id):
     post_data = request.get_json()
     first_name = post_data.get('first_name')
     last_name = post_data.get('last_name')
-    is_admin = post_data.get('is_admin')
 
     member = db.session.query(Member).filter(Member.id == id).first()
 
     if first_name != None:
         member.first_name = first_name
     if last_name != None:
-        member.last_name = last_name
-    if is_admin != None:
-        member.is_admin = is_admin
-    
+        member.last_name = last_name    
 
     db.session.commit()
     return jsonify("Member has been updated")
