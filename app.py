@@ -23,14 +23,13 @@ app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(125), unique=True, nullable=False)
-    password = db.Column(db.String(120), nullable=False)
+    username = db.Column(db.String, unique=True, nullable=False)
+    password = db.Column(db.String, nullable=False)
     email = db.Column(db.String, unique=True, nullable=False)
-    img = db.Column(db.String, nullable=True)
     members = db.relationship('Member', backref='User', cascade='all, delete, delete-orphan')
     events = db.relationship('Event', backref='User', cascade='all, delete, delete-orphan')
 
-    def __init__(self, username, password, email, img):
+    def __init__(self, username, password, email):
         self.username = username
         self.password = password
         self.email = email
@@ -110,7 +109,7 @@ multiple_member_schema = MemberSchema(many=True)
 
 class UserSchema(ma.Schema):
     class Meta:
-        fields = ('id', 'username', 'password', 'email', 'img', 'members', 'events')
+        fields = ('id', 'username', 'password', 'email', 'members', 'events')
     members = ma.Nested(multiple_member_schema)
     events = ma.Nested(multiple_event_schema)
 
@@ -129,7 +128,6 @@ def add_user():
     username = post_data.get('username')
     password = post_data.get('password')
     email = post_data.get('email')
-    img = post_data.get('img')
 
     username_duplicate = db.session.query(User).filter(User.username == username).first()
 
@@ -142,7 +140,7 @@ def add_user():
         return jsonify("Error: The email is already registered.")
 
     encrypted_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = User(username, encrypted_password, email, img)
+    new_user = User(username, encrypted_password, email)
 
     db.session.add(new_user)
     db.session.commit()
