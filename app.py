@@ -8,6 +8,7 @@ import os
 
 load_dotenv()
 
+database_url = "postgresql:" + ":".join(os.environ.get("DATABASE_URL", "").split(":")[1:])
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
 db = SQLAlchemy(app)
@@ -16,7 +17,7 @@ bcrypt = Bcrypt(app)
 CORS(app)
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(basedir, "app.sqlite")
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 
 # CLASSES
 
