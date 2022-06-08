@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow 
-from flask_cors import CORS 
+from flask_cors import CORS
 from flask_bcrypt import Bcrypt, generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import os
@@ -13,9 +13,10 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
 bcrypt = Bcrypt(app)
-
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(basedir, "app.sqlite")
 CORS(app)
+
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(basedir, "app.sqlite")
 
 # CLASSES
 
@@ -67,14 +68,12 @@ class Event(db.Model):
     title = db.Column(db.String, nullable=False)
     start = db.Column(db.String, nullable=False)
     end = db.Column(db.String, nullable=False)
-    all_day = db.Column(db.Boolean, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    def __init__(self, title, start, end, all_day, user_id):
+    def __init__(self, title, start, end, user_id):
         self.title = title
         self.start = start
         self.end = end
-        self.all_day = all_day
         self.user_id = user_id
 
 
@@ -84,7 +83,7 @@ class Event(db.Model):
 
 class EventSchema(ma.Schema):
     class Meta: 
-        fields = ('event_id', 'title', 'start', 'end', 'all_day')
+        fields = ('event_id', 'title', 'start', 'end')
 
 event_schema = EventSchema()
 multiple_event_schema = EventSchema(many=True)
@@ -325,10 +324,9 @@ def add_event():
     title = post_data.get('title')
     start = post_data.get('start')
     end = post_data.get('end')
-    all_day = post_data.get('all_day')
     user_id = post_data.get('user_id')
 
-    new_event = Event(title, start, end, all_day, user_id)
+    new_event = Event(title, start, end, user_id)
 
     db.session.add(new_event)
     db.session.commit()

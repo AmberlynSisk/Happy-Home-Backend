@@ -11,6 +11,8 @@ flask-marshmallow = "*"
 flask-cors = "*"
 flask-bcrypt = "*"
 python-dotenv = "*"
+gunicorn = "*"
+psycopg2-binary = "*"
 
 [dev-packages]
 
