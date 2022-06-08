@@ -24,7 +24,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String, unique=True, nullable=False)
-    password = db.Column(db.String(50), nullable=False)
+    password = db.Column(db.String, nullable=False)
     email = db.Column(db.String, unique=True, nullable=False)
     members = db.relationship('Member', backref='User', cascade='all, delete, delete-orphan')
     events = db.relationship('Event', backref='User', cascade='all, delete, delete-orphan')
