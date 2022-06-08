@@ -33,7 +33,6 @@ class User(db.Model):
         self.username = username
         self.password = password
         self.email = email
-        self.img = img
 
 
 class Member(db.Model):
