@@ -19,7 +19,7 @@ CORS(app)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 
-# CLASSES
+
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
